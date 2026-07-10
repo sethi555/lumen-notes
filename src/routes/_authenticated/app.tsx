@@ -164,7 +164,7 @@ function App() {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="flex w-72 flex-col border-r border-border bg-card">
+      <aside className={`flex-col border-r border-border bg-card shrink-0 ${active ? "hidden md:flex md:w-72" : "flex w-full md:w-72"}`}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Leaf className="h-4 w-4" /></div>
@@ -236,7 +236,7 @@ function App() {
       </aside>
 
       {/* Main */}
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className={`flex-1 flex-col overflow-hidden ${!active ? "hidden md:flex" : "flex w-full"}`}>
         {!active ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <PenLine className="mb-3 h-10 w-10 text-muted-foreground" />
