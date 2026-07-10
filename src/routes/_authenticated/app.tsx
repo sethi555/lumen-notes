@@ -49,12 +49,16 @@ function App() {
   const printRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const refreshNotes = useCallback(async () => setNotes(await listNotes() as NoteRow[]), []);
+  const refreshNotes = useCallback(async () => {
+    const res = await listNotes();
+    setNotes(Array.isArray(res) ? res as NoteRow[] : []);
+  }, []);
 
   useEffect(() => {
     (async () => {
       const [f, t] = await Promise.all([listFolders(), listTags()]);
-      setFolders(f as FolderRow[]); setTags(t as TagRow[]);
+      setFolders(Array.isArray(f) ? f as FolderRow[] : []);
+      setTags(Array.isArray(t) ? t as TagRow[] : []);
       await refreshNotes();
       const { data } = await supabase.auth.getSession();
       setToken(data.session?.access_token);
