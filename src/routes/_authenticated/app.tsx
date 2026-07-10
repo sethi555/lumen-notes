@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import {
   Leaf, Plus, FolderPlus, Search, Pin, Star, Lock, Trash2, PenLine, Table2,
   Presentation, FileDown, Sparkles, LogOut, Palette, Folder, Save,
+  Menu, X, ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,6 +45,7 @@ function App() {
   const [showSheet, setShowSheet] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [token, setToken] = useState<string>();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const editorRef = useRef<NoteEditorHandle>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -82,6 +84,7 @@ function App() {
 
   const openNote = async (id: string) => {
     setActiveId(id); setUnlocked(false); setShowResearch(false); setShowSheet(false);
+    setSidebarOpen(false);
     const n = await getNote({ data: { id } }) as any;
     setActive({ title: n.title, content: n.content ?? "", layout: n.layout ?? { blocks: [] }, is_private: n.is_private });
     setShowSheet(!!n.layout?.sheet);
@@ -153,6 +156,8 @@ function App() {
 
   const insertToEditor = (text: string) => editorRef.current?.insertText(text);
 
+  const closeNote = () => { setActiveId(null); setActive(null); };
+
   const filtered = notes.filter((n) =>
     (!folderFilter || n.folder_id === folderFilter) &&
     (!search || n.title.toLowerCase().includes(search.toLowerCase())),
@@ -161,126 +166,299 @@ function App() {
   const signOut = async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); };
   const composedHtml = `<h1>${active?.title ?? ""}</h1>${active?.content ?? ""}`;
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className={`flex-col border-r border-border bg-card shrink-0 ${active ? "hidden md:flex md:w-72" : "flex w-full md:w-72"}`}>
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Leaf className="h-4 w-4" /></div>
-            <span className="font-display text-lg font-semibold">Lumen</span>
+  // ---------- Sidebar content (reused for both desktop & mobile drawer) ----------
+  const SidebarContent = () => (
+    <div className="flex h-full flex-col">
+      {/* Logo + actions */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Leaf className="h-4 w-4" />
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut} title="Sign out"><LogOut className="h-4 w-4" /></Button>
+          <span className="font-display text-lg font-semibold">Lumen</span>
         </div>
-
-        <div className="px-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes…" className="pl-8" />
-          </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
+            <LogOut className="h-4 w-4" />
+          </Button>
+          {/* Close drawer on mobile */}
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(false)}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
 
-        <div className="mt-3 flex items-center gap-1 px-3">
-          <Button size="sm" className="flex-1" onClick={newNote}><Plus className="mr-1 h-4 w-4" />Note</Button>
-          <Button size="sm" variant="outline" onClick={addFolder}><FolderPlus className="h-4 w-4" /></Button>
+      {/* Search */}
+      <div className="px-3 pt-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes…" className="pl-8 h-9" />
         </div>
+      </div>
 
-        <div className="mt-3 flex-1 overflow-auto px-3 pb-3">
-          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">Folders</div>
-          <button onClick={() => setFolderFilter(null)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${!folderFilter ? "bg-secondary" : "hover:bg-muted"}`}>
-            <Folder className="h-4 w-4" />All notes
+      {/* New note + folder */}
+      <div className="mt-2 flex items-center gap-1 px-3">
+        <Button size="sm" className="flex-1 h-8" onClick={newNote}><Plus className="mr-1 h-3.5 w-3.5" />New Note</Button>
+        <Button size="sm" variant="outline" className="h-8 px-2" onClick={addFolder} title="New folder"><FolderPlus className="h-3.5 w-3.5" /></Button>
+      </div>
+
+      {/* Scrollable list area */}
+      <div className="mt-2 flex-1 overflow-auto px-3 pb-3 space-y-4">
+        {/* Folders */}
+        <div>
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Folders</div>
+          <button
+            onClick={() => setFolderFilter(null)}
+            className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${!folderFilter ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}
+          >
+            <Folder className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">All notes</span>
+            <span className="ml-auto text-xs text-muted-foreground">{notes.length}</span>
           </button>
           {folders.map((f) => (
             <div key={f.id} className="group flex items-center">
-              <button onClick={() => setFolderFilter(f.id)} className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm ${folderFilter === f.id ? "bg-secondary" : "hover:bg-muted"}`}>
-                <Folder className="h-4 w-4" style={{ color: f.color ?? undefined }} />{f.name}
+              <button
+                onClick={() => setFolderFilter(f.id)}
+                className={`flex flex-1 items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${folderFilter === f.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"}`}
+              >
+                <Folder className="h-3.5 w-3.5 shrink-0" style={{ color: f.color ?? undefined }} />
+                <span className="truncate">{f.name}</span>
               </button>
-              <button className="opacity-0 group-hover:opacity-100" onClick={() => { deleteFolder({ data: { id: f.id } }); setFolders((x) => x.filter((y) => y.id !== f.id)); }}>
-                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <button
+                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-opacity"
+                onClick={() => { deleteFolder({ data: { id: f.id } }); setFolders((x) => x.filter((y) => y.id !== f.id)); }}
+              >
+                <Trash2 className="h-3 w-3 text-muted-foreground" />
               </button>
-            </div>
-          ))}
-
-          <div className="mb-2 mt-4 flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">
-            Tags <button onClick={addTag}><Plus className="h-3.5 w-3.5" /></button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {tags.map((t) => <span key={t.id} className="rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">#{t.name}</span>)}
-          </div>
-
-          <div className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Notes</div>
-          {filtered.map((n) => (
-            <div key={n.id} className={`group flex items-center rounded-md ${n.is_private ? "private-note" : ""} ${activeId === n.id ? "bg-secondary" : "hover:bg-muted"}`}>
-              <button onClick={() => openNote(n.id)} className="flex flex-1 items-center gap-1.5 px-2 py-1.5 text-left text-sm">
-                {n.is_pinned && <Pin className="h-3 w-3 text-primary" />}
-                {n.is_private && <Lock className="h-3 w-3 text-muted-foreground" />}
-                <span className="truncate">{n.title || "Untitled"}</span>
-              </button>
-              <div className="flex items-center gap-1 pr-1 opacity-0 group-hover:opacity-100">
-                <button onClick={() => toggleFlag(n, "is_favorite")} title="Favorite"><Star className={`h-3.5 w-3.5 ${n.is_favorite ? "fill-current text-primary" : "text-muted-foreground"}`} /></button>
-                <button onClick={() => toggleFlag(n, "is_pinned")} title="Pin"><Pin className={`h-3.5 w-3.5 ${n.is_pinned ? "text-primary" : "text-muted-foreground"}`} /></button>
-                <button onClick={() => removeNote(n.id)} title="Delete"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
-              </div>
             </div>
           ))}
         </div>
 
-        <div className="border-t border-border p-3">
-          <div className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase text-muted-foreground"><Palette className="h-3.5 w-3.5" />Theme</div>
-          <div className="grid grid-cols-3 gap-1">
-            {THEMES.map((t) => (
-              <button key={t.id} onClick={() => setTheme(t.id)} className={`rounded-md border px-2 py-1.5 text-xs ${theme === t.id ? "border-primary bg-secondary" : "border-border hover:bg-muted"}`}>{t.label}</button>
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Tags
+              <button onClick={addTag} className="hover:text-foreground transition-colors"><Plus className="h-3 w-3" /></button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {tags.map((t) => (
+                <span key={t.id} className="rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">#{t.name}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {tags.length === 0 && (
+          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Tags
+            <button onClick={addTag} className="hover:text-foreground transition-colors"><Plus className="h-3 w-3" /></button>
+          </div>
+        )}
+
+        {/* Notes list */}
+        <div>
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Notes</div>
+          {filtered.length === 0 && (
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">No notes yet. Create one above!</p>
+          )}
+          <div className="space-y-0.5">
+            {filtered.map((n) => (
+              <div
+                key={n.id}
+                className={`group flex items-center rounded-lg transition-colors ${n.is_private ? "private-note" : ""} ${activeId === n.id ? "bg-primary/10" : "hover:bg-muted"}`}
+              >
+                <button onClick={() => openNote(n.id)} className="flex flex-1 items-center gap-1.5 px-2 py-2 text-left text-sm min-w-0">
+                  {n.is_pinned && <Pin className="h-3 w-3 shrink-0 text-primary" />}
+                  {n.is_private && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />}
+                  <div className="min-w-0 flex-1">
+                    <div className={`truncate text-sm font-medium ${activeId === n.id ? "text-primary" : ""}`}>{n.title || "Untitled"}</div>
+                    <div className="truncate text-xs text-muted-foreground">{new Date(n.updated_at).toLocaleDateString()}</div>
+                  </div>
+                </button>
+                <div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => toggleFlag(n, "is_favorite")} title="Favorite" className="p-1 rounded hover:bg-muted">
+                    <Star className={`h-3 w-3 ${n.is_favorite ? "fill-current text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                  <button onClick={() => toggleFlag(n, "is_pinned")} title="Pin" className="p-1 rounded hover:bg-muted">
+                    <Pin className={`h-3 w-3 ${n.is_pinned ? "text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                  <button onClick={() => removeNote(n.id)} title="Delete" className="p-1 rounded hover:bg-destructive/10">
+                    <Trash2 className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Theme switcher at bottom */}
+      <div className="border-t border-border p-3">
+        <div className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <Palette className="h-3 w-3" /> Theme
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className={`rounded-lg border py-1.5 text-xs font-medium transition-colors ${theme === t.id ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ---------- Note toolbar buttons ----------
+  const ToolbarButtons = () => (
+    <>
+      <Button variant="ghost" size="sm" onClick={() => setShowCanvas(true)} className="h-8 gap-1 px-2 text-xs">
+        <PenLine className="h-3.5 w-3.5" /><span className="hidden sm:inline">Draw</span>
+      </Button>
+      <VoiceRecorder
+        onTranscript={insertToEditor}
+        onAudioSaved={(url) => editorRef.current?.insertHtml(`<audio src="${url}" controls></audio>`)}
+      />
+      <Button variant="ghost" size="sm" onClick={addSheet} className="h-8 gap-1 px-2 text-xs">
+        <Table2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sheet</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setShowSlides(true)} className="h-8 gap-1 px-2 text-xs">
+        <Presentation className="h-3.5 w-3.5" /><span className="hidden sm:inline">Slides</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={exportPdf} className="h-8 gap-1 px-2 text-xs">
+        <FileDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">PDF</span>
+      </Button>
+      <Button
+        variant={showResearch ? "secondary" : "ghost"}
+        size="sm"
+        onClick={() => setShowResearch((s) => !s)}
+        className="h-8 gap-1 px-2 text-xs"
+      >
+        <Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Research</span>
+      </Button>
+    </>
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+
+      {/* ── Mobile drawer overlay ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Sidebar (desktop: static | mobile: slide-in drawer) ── */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border
+          transform transition-transform duration-300 ease-in-out
+          md:relative md:translate-x-0 md:flex md:flex-col md:shrink-0
+          ${sidebarOpen ? "translate-x-0 flex flex-col" : "-translate-x-full"}
+        `}
+      >
+        <SidebarContent />
       </aside>
 
-      {/* Main */}
-      <main className={`flex-1 flex-col overflow-hidden ${!active ? "hidden md:flex" : "flex w-full"}`}>
+      {/* ── Main panel ── */}
+      <main className="flex flex-1 flex-col overflow-hidden min-w-0">
         {!active ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <PenLine className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">Select a note or create a new one.</p>
-            <Button className="mt-4" onClick={newNote}><Plus className="mr-1 h-4 w-4" />New note</Button>
+          /* Empty state — show a mobile-friendly top bar too */
+          <div className="flex flex-1 flex-col">
+            {/* Mobile top bar (only when no note open) */}
+            <div className="flex items-center gap-2 border-b border-border bg-card px-3 py-2 md:hidden">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)}>
+                <Menu className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1.5">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Leaf className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-semibold text-sm">Lumen</span>
+              </div>
+            </div>
+            <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+                <PenLine className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-1">No note selected</h2>
+              <p className="text-muted-foreground text-sm mb-4">Select a note from the sidebar or create a new one.</p>
+              <div className="flex gap-2">
+                <Button onClick={newNote} size="sm"><Plus className="mr-1 h-4 w-4" />New Note</Button>
+                <Button variant="outline" size="sm" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+                  <Menu className="mr-1 h-4 w-4" />Browse
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-1 border-b border-border bg-card p-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowCanvas(true)}><PenLine className="mr-1 h-4 w-4" />Draw</Button>
-              <VoiceRecorder onTranscript={insertToEditor} onAudioSaved={(url) => editorRef.current?.insertHtml(`<audio src="${url}" controls></audio>`)} />
-              <Button variant="ghost" size="sm" onClick={addSheet}><Table2 className="mr-1 h-4 w-4" />Sheet</Button>
-              <Button variant="ghost" size="sm" onClick={() => setShowSlides(true)}><Presentation className="mr-1 h-4 w-4" />Slides</Button>
-              <Button variant="ghost" size="sm" onClick={exportPdf}><FileDown className="mr-1 h-4 w-4" />PDF</Button>
-              <Button variant={showResearch ? "secondary" : "ghost"} size="sm" onClick={() => setShowResearch((s) => !s)}><Sparkles className="mr-1 h-4 w-4" />Research</Button>
-              <div className="ml-auto flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => { setActiveId(null); setActive(null); }}>
-                  <Save className="mr-1 h-4 w-4" />Save
+            {/* ── Note toolbar / header ── */}
+            <div className="flex items-center border-b border-border bg-card">
+              {/* Mobile back button */}
+              <button
+                className="flex shrink-0 items-center gap-1 border-r border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors md:hidden"
+                onClick={closeNote}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="text-xs">Notes</span>
+              </button>
+
+              {/* Mobile menu hamburger (when note is open) */}
+              <button
+                className="flex shrink-0 items-center justify-center border-r border-border px-2.5 py-2 text-muted-foreground hover:bg-muted transition-colors md:hidden"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+
+              {/* Toolbar buttons — scrollable on mobile */}
+              <div className="flex flex-1 items-center gap-0.5 overflow-x-auto px-2 py-1 scrollbar-none">
+                <ToolbarButtons />
+              </div>
+
+              {/* Save button — always visible */}
+              <div className="shrink-0 border-l border-border px-2 py-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 px-3 text-xs font-medium text-primary hover:bg-primary/10"
+                  onClick={closeNote}
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>Save</span>
                 </Button>
               </div>
             </div>
 
+            {/* ── Note content ── */}
             {active.is_private && !unlocked ? (
               <VaultLock onUnlock={() => setUnlocked(true)} />
             ) : (
               <div className="flex flex-1 overflow-hidden">
                 <div className="flex-1 overflow-auto">
-                  <div ref={printRef} className="mx-auto max-w-3xl">
+                  <div ref={printRef} className="mx-auto max-w-3xl px-4 md:px-6">
                     <input
                       value={active.title}
                       onChange={(e) => { setActive({ ...active, title: e.target.value }); queueSave({ title: e.target.value }); }}
                       placeholder="Untitled"
-                      className="w-full bg-transparent px-6 pt-6 font-display text-3xl font-semibold outline-none placeholder:text-muted-foreground"
+                      className="w-full bg-transparent pt-6 pb-2 font-display text-2xl md:text-3xl font-semibold outline-none placeholder:text-muted-foreground"
                     />
                     <NoteEditor ref={editorRef} initialHtml={active.content} onChange={onEditorChange} />
                     {showSheet && active.layout?.sheet && (
-                      <div className="px-6 pb-8">
+                      <div className="pb-8">
                         <SpreadsheetBlock value={active.layout.sheet as SheetData} onChange={setSheet} />
                       </div>
                     )}
                   </div>
                 </div>
                 {showResearch && (
-                  <div className="w-96 shrink-0">
+                  <div className="w-80 shrink-0 border-l border-border md:w-96">
                     <ResearchPanel noteContext={active.content} onInsert={insertToEditor} clipperToken={token} />
                   </div>
                 )}
