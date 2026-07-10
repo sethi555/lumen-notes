@@ -1,0 +1,191 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Lumen Notes — biologically optimized design system.
+ * Three eye-health themes selected via the data-theme attribute on <html>:
+ *   focus     — soft sage / muted greens (retinal cone comfort)
+ *   circadian — pure black + deep amber (low blue light)
+ *   reading   — warm sepia / cream textures
+ * All semantic tokens are mapped to Tailwind utilities via @theme inline.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader", ui-serif, Georgia, serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
+/* ===== FOCUS MODE (default) — soft sage & muted greens ===== */
+:root,
+[data-theme="focus"] {
+  --radius: 0.7rem;
+  --background: oklch(0.95 0.02 145);
+  --foreground: oklch(0.34 0.06 145);
+  --card: oklch(0.975 0.015 145);
+  --card-foreground: oklch(0.34 0.06 145);
+  --popover: oklch(0.985 0.012 145);
+  --popover-foreground: oklch(0.34 0.06 145);
+  --primary: oklch(0.46 0.09 150);
+  --primary-foreground: oklch(0.97 0.02 145);
+  --secondary: oklch(0.9 0.03 145);
+  --secondary-foreground: oklch(0.36 0.07 150);
+  --muted: oklch(0.91 0.025 145);
+  --muted-foreground: oklch(0.52 0.05 150);
+  --accent: oklch(0.84 0.07 140);
+  --accent-foreground: oklch(0.32 0.07 150);
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: oklch(0.98 0.01 145);
+  --border: oklch(0.86 0.03 145);
+  --input: oklch(0.88 0.03 145);
+  --ring: oklch(0.46 0.09 150);
+  --sidebar: oklch(0.92 0.028 145);
+  --sidebar-foreground: oklch(0.34 0.06 145);
+  --sidebar-primary: oklch(0.46 0.09 150);
+  --sidebar-primary-foreground: oklch(0.97 0.02 145);
+  --sidebar-accent: oklch(0.86 0.05 142);
+  --sidebar-accent-foreground: oklch(0.32 0.07 150);
+  --sidebar-border: oklch(0.84 0.035 145);
+  --sidebar-ring: oklch(0.46 0.09 150);
+}
+
+/* ===== CIRCADIAN / DARK MODE — pure black + deep amber ===== */
+[data-theme="circadian"] {
+  --radius: 0.7rem;
+  --background: oklch(0.06 0 0);
+  --foreground: oklch(0.82 0.11 75);
+  --card: oklch(0.11 0.01 70);
+  --card-foreground: oklch(0.84 0.1 75);
+  --popover: oklch(0.1 0.01 70);
+  --popover-foreground: oklch(0.84 0.1 75);
+  --primary: oklch(0.74 0.15 70);
+  --primary-foreground: oklch(0.12 0.02 70);
+  --secondary: oklch(0.17 0.02 70);
+  --secondary-foreground: oklch(0.82 0.11 75);
+  --muted: oklch(0.15 0.015 70);
+  --muted-foreground: oklch(0.62 0.09 72);
+  --accent: oklch(0.28 0.06 65);
+  --accent-foreground: oklch(0.86 0.12 75);
+  --destructive: oklch(0.55 0.18 28);
+  --destructive-foreground: oklch(0.95 0.02 75);
+  --border: oklch(0.22 0.03 70);
+  --input: oklch(0.2 0.025 70);
+  --ring: oklch(0.74 0.15 70);
+  --sidebar: oklch(0.08 0.008 70);
+  --sidebar-foreground: oklch(0.8 0.1 75);
+  --sidebar-primary: oklch(0.74 0.15 70);
+  --sidebar-primary-foreground: oklch(0.1 0.02 70);
+  --sidebar-accent: oklch(0.2 0.04 68);
+  --sidebar-accent-foreground: oklch(0.86 0.12 75);
+  --sidebar-border: oklch(0.2 0.03 70);
+  --sidebar-ring: oklch(0.74 0.15 70);
+}
+
+/* ===== READING COMFORT — warm sepia / cream ===== */
+[data-theme="reading"] {
+  --radius: 0.7rem;
+  --background: oklch(0.93 0.035 80);
+  --foreground: oklch(0.33 0.045 55);
+  --card: oklch(0.955 0.03 82);
+  --card-foreground: oklch(0.33 0.045 55);
+  --popover: oklch(0.96 0.028 82);
+  --popover-foreground: oklch(0.33 0.045 55);
+  --primary: oklch(0.48 0.1 50);
+  --primary-foreground: oklch(0.96 0.03 82);
+  --secondary: oklch(0.89 0.04 80);
+  --secondary-foreground: oklch(0.36 0.05 52);
+  --muted: oklch(0.9 0.035 80);
+  --muted-foreground: oklch(0.5 0.05 55);
+  --accent: oklch(0.84 0.07 70);
+  --accent-foreground: oklch(0.34 0.06 50);
+  --destructive: oklch(0.52 0.18 28);
+  --destructive-foreground: oklch(0.97 0.02 82);
+  --border: oklch(0.84 0.04 78);
+  --input: oklch(0.86 0.04 78);
+  --ring: oklch(0.48 0.1 50);
+  --sidebar: oklch(0.9 0.04 80);
+  --sidebar-foreground: oklch(0.33 0.045 55);
+  --sidebar-primary: oklch(0.48 0.1 50);
+  --sidebar-primary-foreground: oklch(0.96 0.03 82);
+  --sidebar-accent: oklch(0.85 0.06 72);
+  --sidebar-accent-foreground: oklch(0.34 0.06 50);
+  --sidebar-border: oklch(0.82 0.045 78);
+  --sidebar-ring: oklch(0.48 0.1 50);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+}
+
+/* ===== Rich editor content styles ===== */
+@utility prose-note {
+  & h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 600; margin: 0.6em 0 0.3em; line-height: 1.15; }
+  & h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; margin: 0.6em 0 0.3em; }
+  & h3 { font-size: 1.2rem; font-weight: 600; margin: 0.5em 0 0.25em; }
+  & p { margin: 0.4em 0; line-height: 1.7; }
+  & ul { list-style: disc; padding-left: 1.4em; margin: 0.4em 0; }
+  & ol { list-style: decimal; padding-left: 1.4em; margin: 0.4em 0; }
+  & li { margin: 0.15em 0; line-height: 1.7; }
+  & blockquote { border-left: 3px solid var(--color-primary); padding-left: 1em; margin: 0.6em 0; color: var(--color-muted-foreground); font-style: italic; }
+  & code { background: var(--color-muted); padding: 0.1em 0.35em; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.9em; }
+  & a { color: var(--color-primary); text-decoration: underline; }
+  & img, & video { max-width: 100%; border-radius: var(--radius); margin: 0.5em 0; }
+  &:focus { outline: none; }
+  &:empty:before { content: attr(data-placeholder); color: var(--color-muted-foreground); }
+}
+
+@utility private-hidden {
+  filter: blur(14px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.55;
+}
+
+/* Three-finger swipe toggles this on <body> to instantly hide private notes */
+.hide-private .private-note { display: none !important; }
